@@ -1,43 +1,33 @@
+import os
 import sys
-import random
 
-from PyQt5 import uic
-from PyQt5.QtWidgets import QWidget, QApplication
-from PyQt5.QtGui import QPainter, QColor
-from Ui import Ui_Form
+import pygame
+import requests
 
+map_request = "https://static-maps.yandex.ru/1.x/?ll=37.385534,55.584227&spn=1,1&pt=37.439194,55.81782,pm,wt,s&l=map"
+response = requests.get(map_request)
 
-class MyWidget(QWidget, Ui_Form):
-    def __init__(self):
-        super().__init__()
-        self.setupUi(self)
-
-        self.do_Paint = False
-
-        self.pushButton.clicked.connect(self.drawCircle)
-
-    def drawCircle(self):
-        self.do_Paint = True
-        self.repaint()
-
-    def paintEvent(self, event):
-        if self.do_Paint:
-            qp = QPainter()
-            qp.begin(self)
-            self.draw(qp)
-            qp.end()
-            self.do_Paint = False
-
-    def draw(self, qp):
-        x = random.randint(0, self.width())
-        y = random.randint(0, self.height())
-        d = random.randint(0, min(x, y))
-        qp.setBrush(QColor(random.randint(0, 255), random.randint(0, 255), random.randint(0, 255)))
-        qp.drawEllipse(x - d, y - d, 2 * d, 2 * d)
+if not response:
+    print("Ошибка выполнения запроса:")
+    print(map_request)
+    print("Http статус:", response.status_code, "(", response.reason, ")")
+    sys.exit(1)
 
 
-if __name__ == '__main__':
-    app = QApplication(sys.argv)
-    ex = MyWidget()
-    ex.show()
-    sys.exit(app.exec())
+map_file = "map.png"
+with open(map_file, "wb") as file:
+    file.write(response.content)
+
+
+pygame.init()
+screen = pygame.display.set_mode((600, 450))
+
+screen.blit(pygame.image.load(map_file), (0, 0))
+
+pygame.display.flip()
+while pygame.event.wait().type != pygame.QUIT:
+    pass
+pygame.quit()
+
+
+os.remove(map_file)
